@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Quiz Results - Quiz App</title>
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 2rem;
+                background-color: #f8f9fa;
+            }
+            .results-container {
+                max-width: 600px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 10px;
+                padding: 2rem;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                text-align: center;
+            }
+            .score-section {
+                margin: 2rem 0;
+            }
+            .score-box {
+                display: inline-block;
+                margin: 1rem 0;
+                padding: 2rem 3rem;
+                font-size: 3rem;
+                font-weight: bold;
+                color: #fff;
+                border-radius: 15px;
+                background: linear-gradient(135deg, #28a745, #20c997);
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            }
+            .score-box.timeout {
+                background: linear-gradient(135deg, #ffc107, #fd7e14);
+                box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+            }
+            .completion-status {
+                margin: 1.5rem 0;
+                padding: 1rem;
+                border-radius: 8px;
+                font-size: 1.1rem;
+            }
+            .completion-status.completed {
+                background-color: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+            .completion-status.timeout {
+                background-color: #fff3cd;
+                color: #856404;
+                border: 1px solid #ffeaa7;
+            }
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+                margin: 2rem 0;
+            }
+            .stat-item {
+                background: #f8f9fa;
+                padding: 1rem;
+                border-radius: 8px;
+                border: 1px solid #dee2e6;
+            }
+            .stat-value {
+                font-size: 1.5rem;
+                font-weight: bold;
+                color: #007bff;
+            }
+            .stat-label {
+                font-size: 0.9rem;
+                color: #6c757d;
+                margin-top: 0.5rem;
+            }
+            .nav-buttons {
+                margin-top: 2rem;
+            }
+            .nav-buttons .btn {
+                margin: 0.5rem;
+                padding: 0.75rem 1.5rem;
+                font-size: 1rem;
+            }
+            .trophy-icon {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+            }
+            .performance-message {
+                margin: 1rem 0;
+                padding: 1rem;
+                border-radius: 8px;
+                font-weight: 500;
+            }
+            .performance-excellent {
+                background-color: #d4edda;
+                color: #155724;
+            }
+            .performance-good {
+                background-color: #cce5ff;
+                color: #004085;
+            }
+            .performance-average {
+                background-color: #fff3cd;
+                color: #856404;
+            }
+            .performance-poor {
+                background-color: #f8d7da;
+                color: #721c24;
+            }
+            @media (max-width: 768px) {
+                body {
+                    margin: 1rem;
+                }
+                .results-container {
+                    padding: 1.5rem;
+                }
+                .score-box {
+                    font-size: 2rem;
+                    padding: 1.5rem 2rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="results-container">
+            <!-- Trophy Icon -->
+            <div class="trophy-icon">
+                {% if timeout %} ⏰ {% elif score >= 8 %} 🏆 {% elif score >= 6
+                %} 🥈 {% elif score >= 4 %} 🥉 {% else %} 📚 {% endif %}
+            </div>
+
+            <h1>Quiz Results</h1>
+            <p class="lead">
+                Hi, <strong>{{ current_user.first_name }}</strong>! Here are
+                your quiz results:
+            </p>
+
+            <!-- Completion Status -->
+            <div
+                class="completion-status {% if timeout %}timeout{% else %}completed{% endif %}"
+            >
+                {% if timeout %} ⏰ <strong>Time Expired!</strong> Quiz was
+                automatically submitted. {% else %} ✅
+                <strong>Quiz Completed Successfully!</strong>
+                {% endif %}
+            </div>
+
+            <!-- Score Display -->
+            <div class="score-section">
+                <div class="score-box {% if timeout %}timeout{% endif %}">
+                    {{ score }}
+                </div>
+                <div>
+                    <strong>Final Score</strong>
+                </div>
+            </div>
+
+            <!-- Performance Message -->
+            {% set percentage = (score / 10) * 100 %}
+            <div
+                class="performance-message {% if percentage >= 80 %}performance-excellent {% elif percentage >= 60 %}performance-good {% elif percentage >= 40 %}performance-average {% else %}performance-poor{% endif %}"
+            >
+                {% if percentage >= 80 %} 🌟 Excellent work! You've mastered
+                this material. {% elif percentage >= 60 %} 👍 Good job! You have
+                a solid understanding. {% elif percentage >= 40 %} 📖 Not bad!
+                Consider reviewing the material again. {% else %} 💪 Keep
+                studying! Practice makes perfect. {% endif %}
+            </div>
+
+            <!-- Statistics Grid -->
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value">{{ score }}</div>
+                    <div class="stat-label">Correct Answers</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">10</div>
+                    <div class="stat-label">Total Questions</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">
+                        {{ "%.0f"|format(percentage) }}%
+                    </div>
+                    <div class="stat-label">Accuracy</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">
+                        {% if timeout %}⏰{% else %}✅{% endif %}
+                    </div>
+                    <div class="stat-label">Status</div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="nav-buttons">
+                <a
+                    href="{{ url_for('app_views.quiz') }}"
+                    class="btn btn-primary"
+                >
+                    🔄 Retake Quiz
+                </a>
+                <a
+                    href="{{ url_for('app_views.home') }}"
+                    class="btn btn-secondary"
+                >
+                    🏠 Home
+                </a>
+                <a
+                    href="{{ url_for('app_views.logout') }}"
+                    class="btn btn-outline-danger"
+                >
+                    🚪 Logout
+                </a>
+            </div>
+
+            <!-- Additional Info for Timeout -->
+            {% if timeout %}
+            <div class="alert alert-warning mt-3" role="alert">
+                <strong>Note:</strong> Your quiz was submitted automatically
+                when the time limit was reached. Any answered questions up to
+                that point were scored.
+            </div>
+            {% endif %}
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+        <script>
+            // Add some celebration animation for high scores
+            document.addEventListener('DOMContentLoaded', function() {
+                const score = {{ score }};
+                const percentage = (score / 10) * 100;
+
+                if (percentage >= 80 && !{{ timeout|lower }}) {
+                    // Add sparkle effect for excellent scores
+                    createSparkles();
+                }
+            });
+
+            function createSparkles() {
+                for (let i = 0; i < 20; i++) {
+                    setTimeout(() => {
+                        const sparkle = document.createElement('div');
+                        sparkle.innerHTML = '✨';
+                        sparkle.style.position = 'fixed';
+                        sparkle.style.left = Math.random() * window.innerWidth + 'px';
+                        sparkle.style.top = Math.random() * window.innerHeight + 'px';
+                        sparkle.style.fontSize = '1.5rem';
+                        sparkle.style.pointerEvents = 'none';
+                        sparkle.style.zIndex = '9999';
+                        sparkle.style.animation = 'sparkle 2s ease-out forwards';
+
+                        document.body.appendChild(sparkle);
+
+                        setTimeout(() => sparkle.remove(), 2000);
+                    }, i * 100);
+                }
+            }
+
+            // Add CSS animation for sparkles
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes sparkle {
+                    0% {
+                        opacity: 1;
+                        transform: scale(0) rotate(0deg);
+                    }
+                    50% {
+                        opacity: 1;
+                        transform: scale(1) rotate(180deg);
+                    }
+                    100% {
+                        opacity: 0;
+                        transform: scale(0) rotate(360deg);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        </script>
+    </body>
+</html>

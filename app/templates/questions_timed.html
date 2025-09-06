@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Timed Quiz - Quiz App</title>
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 2rem;
+                background-color: #f8f9fa;
+            }
+            .quiz-container {
+                max-width: 800px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 10px;
+                padding: 2rem;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
+            .timer-container {
+                position: sticky;
+                top: 20px;
+                background: #fff;
+                border: 2px solid #007bff;
+                border-radius: 10px;
+                padding: 15px;
+                margin-bottom: 20px;
+                text-align: center;
+                z-index: 1000;
+            }
+            .timer-display {
+                font-size: 2rem;
+                font-weight: bold;
+                color: #007bff;
+            }
+            .timer-display.warning {
+                color: #ffc107;
+            }
+            .timer-display.danger {
+                color: #dc3545;
+            }
+            .progress-bar {
+                height: 10px;
+                margin-top: 10px;
+            }
+            .question-block {
+                margin-bottom: 2rem;
+                padding: 1.5rem;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                background: #f8f9fa;
+            }
+            .question-number {
+                background: #007bff;
+                color: white;
+                padding: 5px 12px;
+                border-radius: 15px;
+                font-size: 0.9rem;
+                margin-bottom: 10px;
+                display: inline-block;
+            }
+            .question-text {
+                font-size: 1.1rem;
+                font-weight: 500;
+                margin-bottom: 15px;
+                color: #333;
+            }
+            .answer-input {
+                width: 100%;
+                padding: 12px;
+                border: 2px solid #dee2e6;
+                border-radius: 5px;
+                font-size: 1rem;
+                transition: border-color 0.3s;
+            }
+            .answer-input:focus {
+                border-color: #007bff;
+                box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            }
+            .submit-btn {
+                background: #28a745;
+                color: white;
+                padding: 12px 30px;
+                border: none;
+                border-radius: 5px;
+                font-size: 1.1rem;
+                cursor: pointer;
+                margin-right: 10px;
+            }
+            .submit-btn:hover {
+                background: #218838;
+            }
+            .abandon-btn {
+                background: #dc3545;
+                color: white;
+                padding: 12px 30px;
+                border: none;
+                border-radius: 5px;
+                font-size: 1.1rem;
+                cursor: pointer;
+            }
+            .abandon-btn:hover {
+                background: #c82333;
+            }
+            .header-section {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 2rem;
+                padding-bottom: 1rem;
+                border-bottom: 2px solid #dee2e6;
+            }
+            .nav-links a {
+                margin-left: 1rem;
+                text-decoration: none;
+                color: #007bff;
+            }
+            .nav-links a:hover {
+                text-decoration: underline;
+            }
+            .flash-messages {
+                margin-bottom: 1rem;
+            }
+            .alert {
+                padding: 0.75rem 1rem;
+                margin-bottom: 1rem;
+                border-radius: 0.25rem;
+            }
+            .alert-warning {
+                background-color: #fff3cd;
+                border-color: #ffeaa7;
+                color: #856404;
+            }
+            .alert-error {
+                background-color: #f8d7da;
+                border-color: #f5c6cb;
+                color: #721c24;
+            }
+            .quiz-info {
+                background: #e3f2fd;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+                border-left: 4px solid #2196f3;
+            }
+            @media (max-width: 768px) {
+                body {
+                    margin: 1rem;
+                }
+                .quiz-container {
+                    padding: 1rem;
+                }
+                .header-section {
+                    flex-direction: column;
+                    gap: 1rem;
+                }
+                .timer-display {
+                    font-size: 1.5rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="quiz-container">
+            <!-- Header Section -->
+            <div class="header-section">
+                <div>
+                    <h1>Timed Quiz</h1>
+                    <p>
+                        Welcome, <strong>{{ current_user.first_name }}</strong>!
+                    </p>
+                </div>
+                <div class="nav-links">
+                    <button onclick="abandonQuiz()" class="abandon-btn">
+                        Abandon Quiz
+                    </button>
+                </div>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %} {%
+            if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %} {% endwith %}
+
+            <!-- Timer Container -->
+            <div class="timer-container">
+                <div class="timer-display" id="timer-display">
+                    {{ time_limit_seconds // 60 }}:00
+                </div>
+                <div>Time Remaining</div>
+                <div class="progress">
+                    <div
+                        class="progress-bar bg-primary"
+                        role="progressbar"
+                        id="time-progress"
+                        style="width: 0%"
+                    ></div>
+                </div>
+            </div>
+
+            <!-- Quiz Information -->
+            <div class="quiz-info">
+                <strong>Quiz Instructions:</strong>
+                <ul>
+                    <li>
+                        You have
+                        <strong
+                            >{{ session.time_limit_minutes }} minutes</strong
+                        >
+                        to complete this quiz
+                    </li>
+                    <li>Answer all questions to the best of your ability</li>
+                    <li>
+                        The quiz will automatically submit when time expires
+                    </li>
+                    <li>Your answers are not saved until you submit</li>
+                </ul>
+            </div>
+
+            <!-- Quiz Form -->
+            <form method="post" id="quiz-form">
+                {% for question in questions %}
+                <div class="question-block">
+                    <div class="question-number">Question {{ loop.index }}</div>
+                    <div class="question-text">{{ question.question }}</div>
+                    <input
+                        class="answer-input"
+                        id="q{{ question.id }}"
+                        name="{{ question.id }}"
+                        type="text"
+                        placeholder="Enter your answer here..."
+                        required
+                    />
+                </div>
+                {% endfor %}
+
+                <div class="text-center">
+                    <button type="submit" class="submit-btn" id="submit-btn">
+                        Submit Quiz
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- JavaScript for Timer -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+        <script>
+            // Quiz timing configuration
+            const sessionData = {{ session | tojson }};
+            let timeRemaining = {{ time_limit_seconds }};
+            const totalTime = {{ time_limit_seconds }};
+            let timerInterval;
+            let warningShown = false;
+            let finalWarningShown = false;
+
+            // DOM elements
+            const timerDisplay = document.getElementById('timer-display');
+            const timeProgress = document.getElementById('time-progress');
+            const quizForm = document.getElementById('quiz-form');
+            const submitBtn = document.getElementById('submit-btn');
+
+            // Format time for display
+            function formatTime(seconds) {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+
+            // Update timer display and progress bar
+            function updateTimer() {
+                timerDisplay.textContent = formatTime(timeRemaining);
+
+                // Calculate progress percentage
+                const elapsed = totalTime - timeRemaining;
+                const progressPercent = (elapsed / totalTime) * 100;
+                timeProgress.style.width = progressPercent + '%';
+
+                // Update timer color based on remaining time
+                if (timeRemaining <= 60) { // Last minute - danger
+                    timerDisplay.className = 'timer-display danger';
+                    timeProgress.className = 'progress-bar bg-danger';
+
+                    if (!finalWarningShown) {
+                        showNotification('⚠️ Only 1 minute remaining!', 'danger');
+                        finalWarningShown = true;
+                    }
+                } else if (timeRemaining <= 300) { // Last 5 minutes - warning
+                    timerDisplay.className = 'timer-display warning';
+                    timeProgress.className = 'progress-bar bg-warning';
+
+                    if (!warningShown) {
+                        showNotification('⏰ 5 minutes remaining!', 'warning');
+                        warningShown = true;
+                    }
+                } else {
+                    timerDisplay.className = 'timer-display';
+                    timeProgress.className = 'progress-bar bg-primary';
+                }
+            }
+
+            // Show notification
+            function showNotification(message, type) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+
+                const flashContainer = document.querySelector('.flash-messages') ||
+                                     document.createElement('div');
+                flashContainer.className = 'flash-messages';
+                flashContainer.appendChild(alertDiv);
+
+                if (!document.querySelector('.flash-messages')) {
+                    document.querySelector('.quiz-container').insertBefore(
+                        flashContainer,
+                        document.querySelector('.timer-container')
+                    );
+                }
+
+                // Auto-dismiss after 5 seconds
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.remove();
+                    }
+                }, 5000);
+            }
+
+            // Main timer function
+            function startTimer() {
+                updateTimer();
+
+                timerInterval = setInterval(() => {
+                    timeRemaining--;
+                    updateTimer();
+
+                    // Auto-submit when time expires
+                    if (timeRemaining <= 0) {
+                        clearInterval(timerInterval);
+                        autoSubmitQuiz();
+                    }
+                }, 1000);
+            }
+
+            // Auto-submit quiz when time expires
+            function autoSubmitQuiz() {
+                showNotification('⏰ Time expired! Submitting quiz automatically...', 'danger');
+
+                // Disable form to prevent further editing
+                const inputs = quizForm.querySelectorAll('input');
+                inputs.forEach(input => input.disabled = true);
+
+                submitBtn.textContent = 'Submitting...';
+                submitBtn.disabled = true;
+
+                // Submit form after brief delay
+                setTimeout(() => {
+                    quizForm.submit();
+                }, 2000);
+            }
+
+            // Handle manual form submission
+            quizForm.addEventListener('submit', function(e) {
+                clearInterval(timerInterval);
+                submitBtn.textContent = 'Submitting...';
+                submitBtn.disabled = true;
+
+                // Validate that at least some questions are answered
+                const inputs = quizForm.querySelectorAll('input[type="text"]');
+                const answered = Array.from(inputs).filter(input => input.value.trim() !== '').length;
+
+                if (answered === 0) {
+                    e.preventDefault();
+                    showNotification('Please answer at least one question before submitting.', 'warning');
+                    submitBtn.textContent = 'Submit Quiz';
+                    submitBtn.disabled = false;
+                    startTimer(); // Restart timer
+                    return;
+                }
+
+                showNotification(`Submitting quiz with ${answered} answered questions...`, 'info');
+            });
+
+            // Abandon quiz function
+            function abandonQuiz() {
+                if (confirm('Are you sure you want to abandon this quiz? Your progress will be lost.')) {
+                    clearInterval(timerInterval);
+
+                    // Send abandon request
+                    fetch('/quiz/abandon', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(() => {
+                        window.location.href = '/';
+                    }).catch(() => {
+                        // Fallback - redirect anyway
+                        window.location.href = '/';
+                    });
+                }
+            }
+
+            // Prevent accidental page reload
+            window.addEventListener('beforeunload', function(e) {
+                if (timeRemaining > 0) {
+                    const message = 'Are you sure you want to leave? Your quiz progress will be lost.';
+                    e.returnValue = message;
+                    return message;
+                }
+            });
+
+            // Auto-save functionality (optional)
+            let autoSaveInterval;
+            function startAutoSave() {
+                autoSaveInterval = setInterval(() => {
+                    // Could implement auto-save to localStorage here
+                    const formData = new FormData(quizForm);
+                    const answers = {};
+                    for (let [key, value] of formData.entries()) {
+                        answers[key] = value;
+                    }
+                    localStorage.setItem('quiz_answers_backup', JSON.stringify(answers));
+                }, 30000); // Save every 30 seconds
+            }
+
+            // Restore from auto-save if available
+            function restoreAutoSave() {
+                const saved = localStorage.getItem('quiz_answers_backup');
+                if (saved) {
+                    try {
+                        const answers = JSON.parse(saved);
+                        for (let [questionId, answer] of Object.entries(answers)) {
+                            const input = document.querySelector(`input[name="${questionId}"]`);
+                            if (input && input.value.trim() === '') {
+                                input.value = answer;
+                            }
+                        }
+                        showNotification('Previous answers restored from auto-save', 'info');
+                    } catch (e) {
+                        console.error('Failed to restore auto-save:', e);
+                    }
+                }
+            }
+
+            // Initialize timer and functionality
+            document.addEventListener('DOMContentLoaded', function() {
+                startTimer();
+                startAutoSave();
+                restoreAutoSave();
+
+                // Focus on first input
+                const firstInput = document.querySelector('.answer-input');
+                if (firstInput) {
+                    firstInput.focus();
+                }
+            });
+
+            // Cleanup on page unload
+            window.addEventListener('unload', function() {
+                clearInterval(timerInterval);
+                clearInterval(autoSaveInterval);
+                localStorage.removeItem('quiz_answers_backup');
+            });
+        </script>
+    </body>
+</html>

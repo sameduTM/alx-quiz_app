@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Register - Quiz App</title>
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <style>
+            body {
+                background-color: #f8f9fa;
+            }
+            .register-container {
+                max-width: 400px;
+                margin: 50px auto;
+            }
+            .card {
+                border: none;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
+            .card-header {
+                background-color: #007bff;
+                color: white;
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="register-container">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="mb-0">Create Account</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Flash Messages -->
+                        {% with messages =
+                        get_flashed_messages(with_categories=true) %} {% if
+                        messages %} {% for category, message in messages %}
+                        <div
+                            class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show"
+                        >
+                            {{ message }}
+                            <button
+                                type="button"
+                                class="btn-close"
+                                data-bs-dismiss="alert"
+                            ></button>
+                        </div>
+                        {% endfor %} {% endif %} {% endwith %}
+
+                        <!-- Registration Form -->
+                        <form method="POST">
+                            <!-- First Name -->
+                            <div class="mb-3">
+                                <label for="first_name" class="form-label"
+                                    >First Name</label
+                                >
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="first_name"
+                                    name="first_name"
+                                    required
+                                    value="{{ request.form.get('first_name', '') }}"
+                                />
+                            </div>
+
+                            <!-- Last Name -->
+                            <div class="mb-3">
+                                <label for="last_name" class="form-label"
+                                    >Last Name</label
+                                >
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="last_name"
+                                    name="last_name"
+                                    required
+                                    value="{{ request.form.get('last_name', '') }}"
+                                />
+                            </div>
+
+                            <!-- Username -->
+                            <div class="mb-3">
+                                <label for="user_name" class="form-label"
+                                    >Username</label
+                                >
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="user_name"
+                                    name="user_name"
+                                    required
+                                    value="{{ request.form.get('user_name', '') }}"
+                                />
+                            </div>
+
+                            <!-- Password -->
+                            <div class="mb-3">
+                                <label for="password" class="form-label"
+                                    >Password</label
+                                >
+                                <input
+                                    type="password"
+                                    class="form-control"
+                                    id="password"
+                                    name="password"
+                                    required
+                                />
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    Create Account
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Login Link -->
+                        <div class="text-center mt-3">
+                            <p>
+                                Already have an account?
+                                <a href="{{ url_for('app_views.login') }}"
+                                    >Login here</a
+                                >
+                            </p>
+                            <p>
+                                <a href="{{ url_for('app_views.home') }}"
+                                    >← Back to Home</a
+                                >
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    </body>
+</html>
